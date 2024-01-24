@@ -10,7 +10,6 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.net.ConnectivityManager
@@ -183,14 +182,13 @@ class CalendarWidget : AppWidgetProvider() {
                                     fetchedNumCalendars += 1
                                 } else if (viewingDate == inDate) {
                                     updateListView(context, sortEvents(calendarEvents))
-                                    //populateEventViews(context, sortEvents(inEvents))
+                                    // populateEventViews(context, sortEvents(inEvents))
                                 }
                             }
                         } else {
                             failureCode = codes.BAD_RESPONSE
                             Log.e(ContentValues.TAG, "Bad Response: ${response.errorBody()?.string()}")
-                            views!!.setTextViewText(R.id.displayDate, failureCode.message) 
-                            //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+                            views!!.setTextViewText(R.id.displayDate, failureCode.message) // views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
                             CoroutineScope(Dispatchers.Main).launch {
                                 refreshAccessToken(context, getRefreshToken(context) + "")
                             }
@@ -200,7 +198,7 @@ class CalendarWidget : AppWidgetProvider() {
                         failureCode = codes.FAILED_REQUEST
                         Log.e(ContentValues.TAG, "Failed request: ${t.message}")
                         views!!.setTextViewText(R.id.displayDate, failureCode.message)
-                        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+                        // views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
                         CoroutineScope(Dispatchers.Main).launch {
                             refreshAccessToken(context, getRefreshToken(context) + "")
                         }
@@ -210,7 +208,7 @@ class CalendarWidget : AppWidgetProvider() {
             failureCode = codes.NO_INTERNET
             Log.e(ContentValues.TAG, "Tried to fetch events, but no internet.")
             views!!.setTextViewText(R.id.displayDate, failureCode.message)
-            //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+            // views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
         }
     }
 
@@ -263,10 +261,10 @@ fun updateAppWidget(
     val formattedDate = SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(date)
     if (failureCode == codes.OK) {
         views!!.setTextViewText(R.id.displayDate, formattedDate)
-        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(formattedDate, context, R.font.upheavtt, 96f, Color.WHITE))
+        // views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(formattedDate, context, R.font.upheavtt, 96f, Color.WHITE))
     } else {
         views!!.setTextViewText(R.id.displayDate, failureCode.message)
-        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+        // views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
     }
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }
