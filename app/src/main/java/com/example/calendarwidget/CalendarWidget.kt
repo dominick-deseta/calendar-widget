@@ -19,6 +19,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import androidx.annotation.RequiresApi
 import androidx.core.content.res.ResourcesCompat
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -31,7 +32,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.text.SimpleDateFormat
-import java.time.OffsetDateTime
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -39,6 +39,9 @@ import java.util.Locale
 
 const val PREF_CALENDAR_LIST_CACHE = "calendar_list_cache"
 private var views: RemoteViews? = null
+private var calendarEvents: MutableList<EventItem> = mutableListOf()
+private var totalNumCalendars = 0
+private var fetchedNumCalendars = 0
 
 enum class codes(val message: String) {
     OK("OK"),
@@ -50,17 +53,6 @@ var failureCode = codes.OK
 
 @RequiresApi(Build.VERSION_CODES.O)
 private var viewingDate = ZonedDateTime.now()
-val eventImages = intArrayOf(
-    R.id.eventImage1, R.id.eventImage2, R.id.eventImage3, R.id.eventImage4, R.id.eventImage5,
-    R.id.eventImage6, R.id.eventImage7, R.id.eventImage8, R.id.eventImage9, R.id.eventImage10
-)
-val timeImages = intArrayOf(
-    R.id.timeImage1, R.id.timeImage2, R.id.timeImage3, R.id.timeImage4, R.id.timeImage5,
-    R.id.timeImage6, R.id.timeImage7, R.id.timeImage8, R.id.timeImage9, R.id.timeImage10
-)
-val eventLayouts = intArrayOf(
-    R.id.event1, R.id.event2, R.id.event3, R.id.event4, R.id.event5, R.id.event6, R.id.event7, R.id.event8, R.id.event9, R.id.event10
-)
 
 class CalendarWidget : AppWidgetProvider() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -69,26 +61,51 @@ class CalendarWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // There may be multiple widgets active, so update all of them
         views = RemoteViews(context.packageName, R.layout.calendar_widget)
-
-        callCalendars(context, getAccessToken(context) + "")
 
 //        CoroutineScope(Dispatchers.Main).launch {
 //            refreshAccessToken(context, getRefreshToken(context) + "")
 //        }
 
-        for (appWidgetId in appWidgetIds) {
+        callCalendars(context, getAccessToken(context) + "")
+
+        appWidgetIds.forEach { appWidgetId ->
+            val intent = Intent(context, MyWidgetService::class.java).apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+
+            views?.apply {
+                setRemoteAdapter(R.id.lorem_ipsum, intent)
+                setEmptyView(R.id.lorem_ipsum, R.id.empty_view)
+            }
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
+
+        super.onUpdate(context, appWidgetManager, appWidgetIds)
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun updateListView(context: Context, events: List<EventItem>) {
+        val sharedPreferences = context.getSharedPreferences("WidgetData", Context.MODE_PRIVATE)
+        sharedPreferences.edit().putString("events", Gson().toJson(events)).apply()
+        sharedPreferences.edit().putBoolean("pastDate", viewingDate.toLocalDate() < ZonedDateTime.now().toLocalDate()).apply()
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(ComponentName(context, CalendarWidget::class.java))
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetIds, R.id.lorem_ipsum)
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent) {
         Log.d("RECEIVING!", "Receiving!")
         super.onReceive(context, intent)
-        views = RemoteViews(context.packageName, R.layout.calendar_widget)
 
+        if (views == null) {
+            views = RemoteViews(context.packageName, R.layout.calendar_widget).apply {
+                setRemoteAdapter(R.id.lorem_ipsum, intent)
+                setEmptyView(R.id.lorem_ipsum, R.id.empty_view)
+                Log.d("views", "set remote adapter")
+            }
+        }
 //        CoroutineScope(Dispatchers.Main).launch {
 //            refreshAccessToken(context, getRefreshToken(context) + "")
 //        }
@@ -136,37 +153,44 @@ class CalendarWidget : AppWidgetProvider() {
     @RequiresApi(Build.VERSION_CODES.O)
     fun callCalendars(context: Context, accessToken: String) {
         Log.d("Clearing...", "Clearing the events out")
-        populateEventViews(context, listOf())
         val savedCalendarIds = getSavedCalendarIds(context)
-        callEvents(context, accessToken, 0, savedCalendarIds, viewingDate, mutableListOf<EventItem>())
+        totalNumCalendars = savedCalendarIds.size
+        fetchedNumCalendars = 0
+        calendarEvents = mutableListOf()
+        updateListView(context, mutableListOf())
+        savedCalendarIds.forEach { id ->
+            callEvents(context, accessToken, id, viewingDate)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun callEvents(context: Context, accessToken: String, calendarIdx: Int, calendarIds: List<String>, inDate: ZonedDateTime, inEvents: MutableList<EventItem>) {
+    fun callEvents(context: Context, accessToken: String, calendarId: String, inDate: ZonedDateTime) {
         val timeMin = inDate.withHour(0).withMinute(0).withSecond(0).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         val timeMax = inDate.withHour(23).withMinute(59).withSecond(59).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         Log.d("Getting events with...", accessToken)
         if (isNetworkAvailable(context)) {
-            NetworkService.googleCalendarApi.getEvents("Bearer " + accessToken, calendarIds[calendarIdx], timeMin, timeMax, true).enqueue(object :
+            NetworkService.googleCalendarApi.getEvents("Bearer " + accessToken, calendarId, timeMin, timeMax, true).enqueue(object :
 //            NetworkService.googleCalendarApi.getEvents("Bearer " + accessToken, "iamtherealdinosaur@gmail.com", timeMin, timeMax, true).enqueue(object :
-                    Callback<Events> {
+                        Callback<Events> {
                     override fun onResponse(call: Call<Events>, response: Response<Events>) {
                         if (response.isSuccessful) {
                             failureCode = codes.OK
                             Log.d("Good Response!", response.body().toString())
                             val events = response.body()
                             if (events != null) {
-                                inEvents.addAll(events.eventItems)
-                                if (calendarIdx != calendarIds.size - 1) {
-                                    callEvents(context, accessToken, calendarIdx + 1, calendarIds, inDate, inEvents)
+                                calendarEvents.addAll(events.eventItems)
+                                if (fetchedNumCalendars < totalNumCalendars - 1) {
+                                    fetchedNumCalendars += 1
                                 } else if (viewingDate == inDate) {
-                                    populateEventViews(context, sortEvents(inEvents))
+                                    updateListView(context, sortEvents(calendarEvents))
+                                    //populateEventViews(context, sortEvents(inEvents))
                                 }
                             }
                         } else {
                             failureCode = codes.BAD_RESPONSE
                             Log.e(ContentValues.TAG, "Bad Response: ${response.errorBody()?.string()}")
-                            views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+                            views!!.setTextViewText(R.id.displayDate, failureCode.message) 
+                            //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
                             CoroutineScope(Dispatchers.Main).launch {
                                 refreshAccessToken(context, getRefreshToken(context) + "")
                             }
@@ -175,7 +199,8 @@ class CalendarWidget : AppWidgetProvider() {
                     override fun onFailure(call: Call<Events>, t: Throwable) {
                         failureCode = codes.FAILED_REQUEST
                         Log.e(ContentValues.TAG, "Failed request: ${t.message}")
-                        views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+                        views!!.setTextViewText(R.id.displayDate, failureCode.message)
+                        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
                         CoroutineScope(Dispatchers.Main).launch {
                             refreshAccessToken(context, getRefreshToken(context) + "")
                         }
@@ -184,12 +209,13 @@ class CalendarWidget : AppWidgetProvider() {
         } else {
             failureCode = codes.NO_INTERNET
             Log.e(ContentValues.TAG, "Tried to fetch events, but no internet.")
-            views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+            views!!.setTextViewText(R.id.displayDate, failureCode.message)
+            //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun sortEvents(eventItems: List<EventItem>): List<EventItem> {
+    fun sortEvents(eventItems: MutableList<EventItem>): List<EventItem> {
         val sortedEvents = eventItems.sortedWith(
             Comparator { e1: EventItem, e2: EventItem ->
                 when {
@@ -205,60 +231,6 @@ class CalendarWidget : AppWidgetProvider() {
             }
         )
         return sortedEvents
-    }
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    fun populateEventViews(context: Context, eventItems: List<EventItem>) {
-        // views!!.setViewVisibility(R.id.loading, View.INVISIBLE)
-        // views!!.setInt(R.id.loading, "setMinimumHeight", 0)
-        var previousIsCurrent = false
-        for (i in 0..9) {
-            val eventViewId = eventImages[i]
-            val timeViewId = timeImages[i]
-            val eventLayoutId = eventLayouts[i]
-            if (i < eventItems.size) {
-                val eventSummary = eventItems[i].summary
-                val startTime = eventItems[i].start.dateTime
-                val endTime = eventItems[i].end.dateTime
-                var timeBitmap: Bitmap? = null
-                var inColor = Color.WHITE
-                if (!(startTime.isNullOrEmpty() or endTime.isNullOrEmpty())) {
-                    val compStart = ZonedDateTime.parse(startTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                    val compEnd = ZonedDateTime.parse(endTime, DateTimeFormatter.ISO_OFFSET_DATE_TIME)
-                    views!!.setInt(eventLayoutId, "setBackgroundResource", 0)
-                    views!!.setViewPadding(eventLayoutId, 0, 0, 0, 10)
-                    if (previousIsCurrent) {
-                        views!!.setViewPadding(eventLayoutId, 0, 10, 0, 10)
-                        previousIsCurrent = false
-                    }
-                    if (compEnd < ZonedDateTime.now()) {
-                        inColor = Color.GRAY
-                    } else if (compStart < ZonedDateTime.now()) {
-                        views!!.setInt(
-                            eventLayoutId,
-                            "setBackgroundResource",
-                            R.drawable.event_border
-                        )
-                        views!!.setViewPadding(eventLayoutId, 15, 15, 15, 15)
-                        previousIsCurrent = true
-                    }
-                    val formatStart = OffsetDateTime.parse(startTime).format(DateTimeFormatter.ofPattern("h:mm"))
-                    val formatEnd = OffsetDateTime.parse(endTime).format(DateTimeFormatter.ofPattern("h:mm"))
-                    val time = formatStart + "-" + formatEnd
-                    timeBitmap = convertStringToBitmap(time, context, R.font.windows_command_prompt, 72f, inColor)
-                } else if (viewingDate.toLocalDate() < ZonedDateTime.now().toLocalDate()) {
-                    inColor = Color.GRAY
-                }
-                views!!.setImageViewBitmap(timeViewId, timeBitmap)
-                // Log.d("event", "summary = $eventSummary, startTime = $startTime")
-                views!!.setImageViewBitmap(eventViewId, convertStringToBitmap(eventSummary, context, R.font.windows_command_prompt, 72f, inColor))
-            } else {
-                views!!.setImageViewBitmap(eventViewId, null)
-                views!!.setImageViewBitmap(timeViewId, null)
-            }
-        }
-
-        update(context)
     }
 }
 
@@ -285,14 +257,16 @@ fun updateAppWidget(
 ) {
     views!!.setOnClickPendingIntent(R.id.nextButton, getPendingSelfIntent(context, "ACTION_NEXT"))
     views!!.setOnClickPendingIntent(R.id.prevButton, getPendingSelfIntent(context, "ACTION_PREV"))
-    views!!.setOnClickPendingIntent(R.id.dateImage, getPendingSelfIntent(context, "ACTION_TODAY"))
+    views!!.setOnClickPendingIntent(R.id.displayDate, getPendingSelfIntent(context, "ACTION_TODAY"))
     val instant = viewingDate.toInstant()
     val date = Date.from(instant)
     val formattedDate = SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(date)
     if (failureCode == codes.OK) {
-        views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(formattedDate, context, R.font.upheavtt, 96f, Color.WHITE))
+        views!!.setTextViewText(R.id.displayDate, formattedDate)
+        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(formattedDate, context, R.font.upheavtt, 96f, Color.WHITE))
     } else {
-        views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
+        views!!.setTextViewText(R.id.displayDate, failureCode.message)
+        //views!!.setImageViewBitmap(R.id.dateImage, convertStringToBitmap(failureCode.message, context, R.font.upheavtt, 96f, Color.WHITE))
     }
     appWidgetManager.updateAppWidget(appWidgetId, views)
 }

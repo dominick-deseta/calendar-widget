@@ -41,14 +41,24 @@
             android:textColor="#02a16c"
             android:textSize="28dp"
             android:textStyle="bold"/>
-        <LinearLayout
-            android:id="@+id/checkbox_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center_horizontal"
-            android:paddingBottom="20dp">
-        </LinearLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:id="@+id/checkbox_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center_horizontal"
+                android:paddingBottom="20dp">
+                <!-- Checkboxes will be added here at runtime -->
+            </LinearLayout>
+        </ScrollView>
+        
     </LinearLayout>
 
 </LinearLayout>

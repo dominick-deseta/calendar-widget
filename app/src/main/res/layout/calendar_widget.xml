@@ -1,16 +1,30 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
-    android:padding="8dp"
-    android:weightSum="3">
+    android:weightSum="3"
+    android:id="@+id/main_view">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:paddingBottom="10dp"
-        android:weightSum="6">
+        android:weightSum="8"
+        android:paddingBottom="10dp">
+
+        <TextView
+            android:id="@+id/displayDate"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="6"
+            android:background="@color/black"
+            android:paddingTop="5dp"
+            android:text="Current Date"
+            android:textColor="@color/white"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:fontFamily="sans-serif-smallcaps"/>
 
         <ImageButton
             android:id="@+id/prevButton"
@@ -20,17 +34,8 @@
             android:src="@drawable/prev_states"
             android:background="#000"
             android:scaleType="fitCenter"
-            android:adjustViewBounds="true"/>
-
-        <ImageButton
-            android:id="@+id/dateImage"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="4"
-            android:background="#000"
-            android:paddingLeft="10dp"
-            android:paddingRight="10dp"
-            android:paddingTop="5dp"/>
+            android:adjustViewBounds="true"
+            android:layout_gravity="center_vertical"/>
 
         <ImageButton
             android:id="@+id/nextButton"
@@ -40,212 +45,31 @@
             android:src="@drawable/next_states"
             android:scaleType="fitCenter"
             android:adjustViewBounds="true"
-            android:background="#000"/>
+            android:background="#000"
+            android:layout_gravity="center_vertical"/>
     </LinearLayout>
 
+    <ListView
+        android:id="@+id/lorem_ipsum"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:listitem="@layout/list_item"/>
+
+    <TextView
+        android:id="@+id/empty_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#808080"
+        android:textStyle="bold"
+        android:text="No Events"
+        android:textSize="15sp" />
 <!--    <ImageView-->
 <!--        android:id="@+id/loading"-->
 <!--        android:layout_width="wrap_content"-->
 <!--        android:layout_height="wrap_content"-->
 <!--        android:scaleType="fitCenter"-->
 <!--        />-->
-
-    <LinearLayout
-        android:id="@+id/eventList"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/event1"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event2"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event3"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event4"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage4"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event5"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage5"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage5"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event6"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage6"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage6"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event7"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage7"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event8"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage8"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage8"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event9"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage9"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage9"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/event10"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingBottom="5dp">
-            <ImageView
-                android:id="@+id/eventImage10"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:scaleType="fitStart"/>
-            <ImageView
-                android:id="@+id/timeImage10"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:scaleType="fitEnd"/>
-        </LinearLayout>
-    </LinearLayout>
 
 </LinearLayout>
 
